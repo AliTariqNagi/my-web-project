@@ -846,75 +846,47 @@ function buildDemoCanvas(){
 buildDemoCanvas();
 
 /* ============================================================
-   CONTACT FORM — SEND TO FASTAPI BACKEND
+   CONTACT FORM — SEND TO WHATSAPP
    ============================================================ */
-const form = document.getElementById('contactForm');
-const note = document.getElementById('formNote');
+const form = document.getElementById("contactForm");
+const note = document.getElementById("formNote");
 
-const API_BASE_URL = window.FLOWTICA_API_BASE_URL || "";
+const WHATSAPP_NUMBER = "393292542379"; // your WhatsApp number without +
 
 if (form) {
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", function (e) {
     e.preventDefault();
-
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton ? submitButton.textContent : "Book a Free Consultation";
 
     const data = new FormData(form);
 
-    const payload = {
-      name: data.get("name"),
-      email: data.get("email"),
-      company: data.get("company"),
-      service: data.get("service"),
-      message: data.get("message"),
-      source_page: window.location.href
-    };
+    const name = data.get("name") || "";
+    const email = data.get("email") || "";
+    const company = data.get("company") || "";
+    const service = data.get("service") || "";
+    const message = data.get("message") || "";
 
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = "Sending...";
-    }
+    const whatsappMessage =
+`Hello Retina Networks,
+
+I want to book a free consultation.
+
+Name: ${name}
+Email: ${email}
+Company: ${company}
+Service: ${service}
+
+Project details:
+${message}`;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 
     if (note) {
-      note.textContent = "";
+      note.textContent = "Opening WhatsApp to send your consultation request...";
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/contact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(result.detail || "Message could not be sent.");
-      }
-
-      if (note) {
-        note.textContent = "Thank you — your consultation request has been sent successfully.";
-      }
-
-      form.reset();
-
-    } catch (error) {
-      console.error("Contact form error:", error);
-
-      if (note) {
-        note.textContent = "Sorry, your message could not be sent. Please email us directly.";
-      }
-
-    } finally {
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.textContent = originalButtonText;
-      }
-    }
+    window.open(whatsappUrl, "_blank");
   });
 }
 
