@@ -851,7 +851,7 @@ buildDemoCanvas();
 const form = document.getElementById("contactForm");
 const note = document.getElementById("formNote");
 
-const WHATSAPP_NUMBER = "393292542379"; // your WhatsApp number without +
+const WHATSAPP_NUMBER = "393409050330"; // your WhatsApp number without +
 
 if (form) {
   form.addEventListener("submit", function (e) {
