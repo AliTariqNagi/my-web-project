@@ -846,77 +846,130 @@ function buildDemoCanvas(){
 buildDemoCanvas();
 
 /* ============================================================
-   CONTACT FORM — SEND TO WHATSAPP
+   CONTACT FORM — SAVE TO DATABASE, THEN OPEN WHATSAPP
    ============================================================ */
 const form = document.getElementById("contactForm");
 const note = document.getElementById("formNote");
 
 const WHATSAPP_NUMBER = "393409050330"; // your WhatsApp number without +
+const API_BASE_URL = window.RETINA_API_BASE_URL || window.FLOWTICA_API_BASE_URL || "";
+
+function buildWhatsAppUrl(message) {
+  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
+}
+
+function showWhatsAppButton(whatsappUrl, savedId) {
+  if (!note) return;
+
+  note.innerHTML = `
+    <strong>Your request has been saved${savedId ? ` with ID #${savedId}` : ""}.</strong>
+    <br><br>
+    Please click the button below to send the same request on WhatsApp.
+    <br><br>
+    <a href="${whatsappUrl}"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="btn btn-primary">
+      Open WhatsApp and Send Message
+    </a>
+    <br><br>
+    <small>If WhatsApp asks you to log in, log in first, then come back and click this button again.</small>
+  `;
+}
 
 if (form) {
-  form.addEventListener("submit", function (e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton ? submitButton.textContent : "Book a Free Consultation";
     const data = new FormData(form);
 
-    const name = data.get("name") || "";
-    const email = data.get("email") || "";
-    const company = data.get("company") || "";
-    const service = data.get("service") || "";
-    const message = data.get("message") || "";
+    const payload = {
+      name: (data.get("name") || "").trim(),
+      email: (data.get("email") || "").trim(),
+      company: (data.get("company") || "").trim(),
+      service: (data.get("service") || "").trim(),
+      message: (data.get("message") || "").trim(),
+      source_page: window.location.href
+    };
 
     const whatsappMessage =
 `Hello Retina Networks,
 
 I want to book a free consultation.
 
-Name: ${name}
-Email: ${email}
-Company: ${company}
-Service: ${service}
+Name: ${payload.name}
+Email: ${payload.email}
+Company: ${payload.company || "-"}
+Service: ${payload.service || "-"}
 
 Project details:
-${message}`;
+${payload.message}`;
 
-    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = buildWhatsAppUrl(whatsappMessage);
 
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
-
-    if (note) {
-      note.textContent = "Opening WhatsApp to send your consultation request...";
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Saving request...";
     }
 
-    window.open(whatsappUrl, "_blank");
+    if (note) {
+      note.textContent = "Saving your request securely...";
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.detail || "Your request could not be saved.");
+      }
+
+      showWhatsAppButton(whatsappUrl, result.id);
+
+      // Try to open WhatsApp after saving. If the browser blocks it, the button above remains available.
+      const opened = window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      if (!opened && note) {
+        note.innerHTML += `<br><small>Your browser blocked the automatic WhatsApp window. Please use the button above.</small>`;
+      }
+
+      form.reset();
+
+    } catch (error) {
+      console.error("Contact form error:", error);
+
+      if (note) {
+        note.innerHTML = `
+          <strong>Sorry, your request could not be saved in the database.</strong>
+          <br><br>
+          You can still contact us on WhatsApp:
+          <br><br>
+          <a href="${whatsappUrl}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="btn btn-primary">
+            Open WhatsApp
+          </a>
+        `;
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
+      }
+    }
   });
 }
 
-})();
 
 
-/* ============================================================
-   HERO/DEMO VIDEO SUPPORT
-   ============================================================ */
-(function(){
-  const heroVideo = document.querySelector('.hero-automation-video');
-  if(heroVideo){
-    heroVideo.muted = true;
-    heroVideo.loop = true;
-    heroVideo.playsInline = true;
-    const tryPlay = () => heroVideo.play().catch(() => {});
-    heroVideo.addEventListener('canplay', tryPlay, { once:true });
-    tryPlay();
-  }
-
-  const demoVideo = document.getElementById('demoVideoA');
-  const demoWrap = demoVideo?.closest('.demo-video-wrap');
-  if(demoVideo && demoWrap){
-    demoWrap.classList.add('has-real-video');
-    demoVideo.muted = true;
-    demoVideo.loop = true;
-    demoVideo.playsInline = true;
-    demoVideo.preload = 'metadata';
-    const tryDemoPlay = () => demoVideo.play().catch(() => {});
-    demoVideo.addEventListener('canplay', tryDemoPlay, { once:true });
-    tryDemoPlay();
-  }
 })();

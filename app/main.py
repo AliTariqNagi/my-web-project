@@ -30,7 +30,9 @@ from app.email_utils import send_business_notification
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Flowtica AI Backend")
+ENABLE_EMAIL_NOTIFICATIONS = os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "false").lower() == "true"
+
+app = FastAPI(title="Retina Networks AI Backend")
 
 
 # Create database tables
@@ -68,12 +70,12 @@ if os.path.exists(ASSETS_DIR):
 async def root():
     if os.path.exists(os.path.join(FRONTEND_DIR, "index.html")):
         return RedirectResponse(url="/frontend/index.html")
-    return {"message": "Flowtica AI Backend is running. Open /docs for API documentation."}
+    return {"message": "Retina Networks AI Backend is running. Open /docs for API documentation."}
 
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "service": "Flowtica AI Backend"}
+    return {"ok": True, "service": "Retina Networks AI Backend"}
 
 
 # ----------------------- Admin security -----------------------
@@ -115,11 +117,12 @@ async def submit_contact_form(
         db.commit()
         db.refresh(db_inquiry)
 
-        try:
-            await send_business_notification(
-                subject=f"New Flowtica AI inquiry #{db_inquiry.id}: {db_inquiry.service or 'General inquiry'}",
-                reply_to=db_inquiry.email,
-                body=f"""New website inquiry received.
+        if ENABLE_EMAIL_NOTIFICATIONS:
+            try:
+                await send_business_notification(
+                    subject=f"New Retina Networks AI inquiry #{db_inquiry.id}: {db_inquiry.service or 'General inquiry'}",
+                    reply_to=db_inquiry.email,
+                    body=f"""New website inquiry received.
 
 ID: {db_inquiry.id}
 Name: {db_inquiry.name}
@@ -131,11 +134,11 @@ Source Page: {db_inquiry.source_page or "-"}
 Message:
 {db_inquiry.message}
 """,
-            )
-        except Exception as email_error:
-            logger.exception("Email notification failed: %s", email_error)
+                )
+            except Exception as email_error:
+                logger.exception("Email notification failed: %s", email_error)
 
-        return {"message": "Your message has been received. We will follow up soon.", "id": db_inquiry.id}
+        return {"message": "Your message has been saved successfully.", "id": db_inquiry.id}
 
     except Exception as error:
         db.rollback()
@@ -218,11 +221,12 @@ async def book_consultation(
         db.commit()
         db.refresh(booking)
 
-        try:
-            await send_business_notification(
-                subject=f"New consultation booking request #{booking.id}",
-                reply_to=booking.email,
-                body=f"""New consultation booking request.
+        if ENABLE_EMAIL_NOTIFICATIONS:
+            try:
+                await send_business_notification(
+                    subject=f"New Retina Networks AI consultation request #{booking.id}",
+                    reply_to=booking.email,
+                    body=f"""New consultation booking request.
 
 ID: {booking.id}
 Name: {booking.name}
@@ -236,11 +240,11 @@ Timezone: {booking.timezone or "-"}
 Notes:
 {booking.notes or "-"}
 """,
-            )
-        except Exception as email_error:
-            logger.exception("Booking email notification failed: %s", email_error)
+                )
+            except Exception as email_error:
+                logger.exception("Booking email notification failed: %s", email_error)
 
-        return {"message": "Your consultation request has been received.", "id": booking.id}
+        return {"message": "Your consultation request has been saved successfully.", "id": booking.id}
 
     except Exception as error:
         db.rollback()
