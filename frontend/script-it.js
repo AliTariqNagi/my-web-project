@@ -851,7 +851,7 @@ buildDemoCanvas();
 const form = document.getElementById("contactForm");
 const note = document.getElementById("formNote");
 
-const WHATSAPP_NUMBER = "393409050330"; // your WhatsApp number without +
+const WHATSAPP_NUMBER = "393292542379"; // without +
 
 if (form) {
   form.addEventListener("submit", function (e) {
@@ -866,30 +866,33 @@ if (form) {
     const message = data.get("message") || "";
 
     const whatsappMessage =
-`Ciao Retina Networks,
+`Hello Retina Networks,
 
-vorrei prenotare una consulenza gratuita.
+I want to book a free consultation.
 
-Nome: ${name}
+Name: ${name}
 Email: ${email}
-Azienda: ${company}
-Servizio: ${service}
+Company: ${company}
+Service: ${service}
 
-Dettagli del progetto:
+Project details:
 ${message}`;
 
     const encodedMessage = encodeURIComponent(whatsappMessage);
 
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const whatsappUrl = isMobile
+      ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`
+      : `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMessage}`;
 
     if (note) {
-      note.textContent = "Apertura di WhatsApp per inviare la tua richiesta di consulenza...";
+      note.textContent = "Opening WhatsApp. Please press Send after WhatsApp opens.";
     }
 
-    window.open(whatsappUrl, "_blank");
+    window.location.href = whatsappUrl;
   });
 }
-
 })();
 
 
